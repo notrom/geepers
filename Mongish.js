@@ -162,10 +162,10 @@ Mongish.prototype.find = function(filter, opt, cb) {
     // use of sem to lock during some other ops
     self.sem.take(1, function() {
         findRows(self.workSheet, query, function (err, rowData) {
+            self.sem.leave(1);
             // based on what we know about the fields in this sheet
             var data = [];
-            self.sem.leave(1);
-            for (var i = 0; i < rowData.length; i++) {
+            for (var i = 0; !err && i < rowData.length; i++) {
                 var obj = {};
                 for (var prop in self.fields) {
                     if(self.fields.hasOwnProperty(prop)) {
@@ -242,6 +242,7 @@ function saveRow(row, cb) {
 
 function findRows(workSheet, query, cb) {
     workSheet.getRows({query: query}, function (err, rowData) {
+        if (err) err += ' - ['+query+']'; 
         cb(err, rowData);
     });
 }
