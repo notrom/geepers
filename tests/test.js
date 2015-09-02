@@ -34,7 +34,17 @@ describe('geepers', function() {
             if (mongish) done();
         });
     });
-    describe.only('#Mongish.find()', function () {
+    describe('#Mongish.filter()', function () {
+        it('and');
+        it('$or');
+        it('$gt');
+        it('$lt');
+        it('not?');
+        it('<=?');
+        it('>=?');
+        it('Other filter types?');
+    });
+    describe('#Mongish.find()', function () {
         before(function (done) {
             this.timeout(30000);
             geepers.connect(geepersId, function (err, dbConn) {
@@ -100,11 +110,52 @@ describe('geepers', function() {
         });
         it('and filter on string property "word == "this is 20" returns 1 records', function (done) {
             db.collection(mochaTestSheet).find({word:'this is 20'},{},function (err, result) {
+                console.log('word search ', err, result);
+                assert.equal(err, null);
+                assert.notEqual(result, null);
                 assert.equal(1, result.length);
                 assert.equal(202020, result[0].time);
                 assert.equal(20, result[0].i);
                 done(err);
             });
+        });
+        it('sort order');
+        it('selective fields');
+    });
+    describe('#Mongish.insertMany()', function () {
+        beforeEach(function (done) {
+            this.timeout(30000);
+            geepers.connect(geepersId, function (err, dbConn) {
+                if (err) throw err;
+                db = dbConn;
+                db.collection(mochaTestSheet).deleteMany({}, {}, function (err, result) {
+                    done(err);
+                });
+            });
+        });
+       it('partial object (missing properties) insert ok', function (done) {
+           db.collection(mochaTestSheet).insertMany([{i:1}], {}, function (err, result) {
+               assert.equal(1, result.length);
+               assert.equal(1, result[0].i);
+               assert.equal(null, result[0].time);
+               done(err);
+           });
+        }); 
+        it('gid property created and applied, can be queried', function (done) {
+           db.collection(mochaTestSheet).insertMany([{i:1},{i:2}], {}, function (err, result) {
+               assert.equal(result.length, 2);
+               assert.equal((result[0].i == 1 || result[1].i == 1), true);
+               assert.equal((result[0].i == 2 || result[1].i == 2), true);
+               assert.notEqual(result[0].gid, null);
+               assert.notEqual(result[1].gid, null);
+               var foundI = result[0].i;
+               var foundGid = result[0].gid;
+               db.collection(mochaTestSheet).find({gid:foundGid}, {}, function (err, results) {
+                   assert.equal(results.length, 1);
+                   assert.equal(results[0].i, foundI);
+                   done(err);
+               });
+           });
         });
     });
     describe('#Mongish.deleteMany()', function () {
