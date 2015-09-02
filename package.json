@@ -1,0 +1,15 @@
+{
+  "name": "GeePersHarness",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "node app.js",
+    "test": "mocha tests"
+  },
+  "dependencies": {
+    "google-spreadsheet": "1.0.1",
+    "async": "1.4.2",
+    "semaphore": "1.0.3",
+    "node-uuid": "1.4.3"
+  }
+}
