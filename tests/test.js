@@ -2,10 +2,13 @@
 var assert = require("assert");
 
 // My modules
-var geepers = require('../geepers.js');
+var Geepers = require('../geepers.js');
 var geepersId = "1NDpeh2QcZiadjzhIqW9e33IsEpmiM7XMafB2LJueA5c";
 var mochaTestSheet = 'functionTests';
 //geepers.connect(geepersId, tests);
+
+var geepers = new Geepers();
+console.log(geepers);
 
 describe('geepers', function() {
     var db = {};
@@ -30,11 +33,11 @@ describe('geepers', function() {
         });
         it('Returns an object ', function(done) {
             this.timeout(5000);
-            var mongish = db.collection(mochaTestSheet);
-            if (mongish) done();
+            var collection = db.collection(mochaTestSheet);
+            if (collection) done();
         });
     });
-    describe('#Mongish.filter()', function () {
+    describe('#Collection.filter()', function () {
         it('and');
         it('$or');
         it('$gt');
@@ -44,7 +47,7 @@ describe('geepers', function() {
         it('>=?');
         it('Other filter types?');
     });
-    describe('#Mongish.find()', function () {
+    describe('#Collection.find()', function () {
         before(function (done) {
             this.timeout(30000);
             geepers.connect(geepersId, function (err, dbConn) {
@@ -122,7 +125,7 @@ describe('geepers', function() {
         it('sort order');
         it('selective fields');
     });
-    describe('#Mongish.insertMany()', function () {
+    describe('#Collection.insertMany()', function () {
         beforeEach(function (done) {
             this.timeout(30000);
             geepers.connect(geepersId, function (err, dbConn) {
@@ -158,7 +161,7 @@ describe('geepers', function() {
            });
         });
     });
-    describe('#Mongish.deleteMany()', function () {
+    describe('#Collection.deleteMany()', function () {
         beforeEach(function (done) {
             this.timeout(30000);
             geepers.connect(geepersId, function (err, dbConn) {
@@ -208,121 +211,3 @@ describe('geepers', function() {
     });
 });
 
-//describe('geepers.Mongish', function () {
-//    geepers.connect(geepersId, function (err, db) {
-//        mongish = db.collection('functionTests');
-//        describe('#deleteMany()', function () {
-//            it('No err result is true', function (done) {
-//                mongish.deleteMany({},{},function (err, result) {
-//                   done(err);
-//                });
-//            });
-//        });
-    //});
-//});
-
-function tests (err, db) {
-    
-    async.series([
-            function(callback) {
-                var sdts = new Date();
-                db.collection("functionTests").deleteMany({},{},function (err, result) { 
-                    console.log("deleteAll", (new Date()) - sdts);
-                    callback(err, {test: "deleteAll", expected: true, actual: result});
-                });
-            },
-            function(callback) {
-                var insObjs = createNObjects(10);
-                
-                var sdts = new Date();
-                db.collection("functionTests").insertMany(insObjs,{},function (err, result) {
-                    console.log("insertFirst10", (new Date()) - sdts);
-                    callback(err, {test: "insertFirst10", expected: 10, actual: result.length});
-                });
-            },
-            function(callback) {
-                var sdts = new Date();
-                db.collection("functionTests").find({},{},function (err, result) {
-                    console.log("findAllEquals10", (new Date()) - sdts);
-                    callback(err, {test: "findAllEquals10", expected: 10, actual: result.length});
-                });
-            },
-            function(callback) {
-                var sdts = new Date();
-                db.collection("functionTests").find({i:7},{},function (err, result) {
-                    console.log("findI7Equals1", (new Date()) - sdts);
-                    callback(err, {test: "findI7Equals1", expected: 1, actual: result.length});
-                });
-            },
-            function(callback) {
-                var sdts = new Date();
-                db.collection("functionTests").insertOne({i: 7, time: 1111 }, {}, function (err, result) {
-                    console.log("insertI7Time1111", (new Date()) - sdts);
-                    callback(err, {test: "insertI7Time1111", expected: 1111, actual: result.time});
-                });
-            },
-            function(callback) {
-                var sdts = new Date();
-                db.collection("functionTests").find({i:7},{},function (err, result) {
-                    console.log("findI7Equals2", (new Date()) - sdts);
-                    callback(err, {test: "findI7Equals2", expected: 2, actual: result.length});
-                });
-            },
-            function(callback) {
-                var sdts = new Date();
-                db.collection("functionTests").find({i:7},{},function (err, result) {
-                    console.log("findI7SecondTime1111", (new Date()) - sdts);
-                    callback(err, {test: "findI7SecondTime1111", expected: '1111', actual: result[1].time});
-                });
-            },
-            function(callback) {
-                var sdts = new Date();
-                db.collection("functionTests").find({i: {$gt: 1}},{},function (err, result) {
-                    console.log("findIgreaterThan1", (new Date()) - sdts);
-                    console.log(result);
-                    callback(err, {test: "findIgreaterThan1", expected: 9, actual: result.length});
-                });
-            },
-            function(callback) {
-                var sdts = new Date();
-                db.collection("functionTests").insertMany([{i:20, time:202020},
-                                                    {i:21, time:212121}],{},function (err, result) {
-                    console.log("insertMany20And21", (new Date()) - sdts);
-                    callback(err, {test: "insertMany20And21", expected: 2, actual: result.length});
-                });
-            },
-            function(callback) {
-                var sdts = new Date();
-                db.collection("functionTests").deleteMany({},{},function (err, result) { 
-                    console.log("deleteAll2", (new Date()) - sdts);
-                    callback(err, {test: "deleteAll2", expected: true, actual: result});
-                });
-            }
-        ],
-        // optional callback
-        function(err, results){
-            if (err) {
-                console.log(err);
-            }
-            for (var i = 0; i < results.length; i++) {
-                console.log(results[i]);
-                if (typeof results.expected === 'object') {
-                    if (!assert.deepEqual(actual, expected)) {
-                        console.log("TEST FAILED: " + results[i].test);
-                    }
-                } else {
-                    if (results[i].expected !== results[i].actual) {
-                        console.log("TEST FAILED: " + results[i].test);
-                    }
-                }
-            }
-        });
-}
-
-function createNObjects(n) {
-    var objs = [];
-    for (var i = 0; i < n; i ++) {
-        objs.push({i: i, time: new Date(), istring: '' + i + ' is ' + i});
-    }
-    return objs;
-}
