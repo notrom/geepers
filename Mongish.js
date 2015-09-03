@@ -221,6 +221,9 @@ function filterOptProcess(queryPart, filterObj, op, first) {
             } else if (ele === '$lt') {
                 queryPart += ' < ' + filterObj[ele];
             } else {
+                if (typeof filterObj[ele] === 'string') {
+                    filterObj[ele] = '"' + filterObj[ele] + '"';
+                }
                 queryPart += op + ele + ' = ' + filterObj[ele];
             }
         }
