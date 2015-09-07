@@ -8,7 +8,6 @@ var mochaTestSheet = 'functionTests';
 //geepers.connect(geepersId, tests);
 
 var geepers = new Geepers();
-console.log(geepers);
 
 describe('geepers', function() {
     var db = {};
@@ -113,7 +112,6 @@ describe('geepers', function() {
         });
         it('and filter on string property "word == "this is 20" returns 1 records', function (done) {
             db.collection(mochaTestSheet).find({word:'this is 20'},{},function (err, result) {
-                console.log('word search ', err, result);
                 assert.equal(err, null);
                 assert.notEqual(result, null);
                 assert.equal(1, result.length);

@@ -13,18 +13,14 @@ var Geepers = function() {
     
     function setupWorkSheets(spreadsheetInfo, cb) {
         var sheetWorksheets = {};
-        var c = spreadsheetInfo.worksheets.length;
-        for (var i in spreadsheetInfo.worksheets) {
-            sheetWorksheets[spreadsheetInfo.worksheets[i].title] =
-            new Collection(spreadsheetInfo.worksheets[i], creds);
-            sheetWorksheets[spreadsheetInfo.worksheets[i].title].getFields(function (fields) {
-                // TODO: counting callbacks? Should probably be promises ...
-                if (--c === 0) {
-                    cb(sheetWorksheets);
-                }
+        async.each(spreadsheetInfo.worksheets, function (sheet, callback) {
+            sheetWorksheets[sheet.title] = new Collection(sheet, creds);
+            sheetWorksheets[sheet.title].getFields(function(err, fields) {
+                callback(err);
             });
-        }
-        //return sheetWorksheets;
+        }, function (err) {
+            cb(err, sheetWorksheets);
+        });
     }
     
     this.collection = function (collectionName) {
@@ -37,10 +33,10 @@ var Geepers = function() {
             spreadSheet.getInfo(function (err, spreadSheetInfo) {
                 thisSpreadsheetInfo = spreadSheetInfo;
                 //console.log( spreadSheetInfo.title + ' is loaded' );
-                setupWorkSheets(spreadSheetInfo, function (workSheetsCol) {
+                setupWorkSheets(spreadSheetInfo, function (err, workSheetsCol) {
                     workSheets = workSheetsCol;
-                    // TODO: not sure if this is correct ideal ...
-                    cb(null, self);
+                    // TODO: not sure if this is correct or ideal ...
+                    cb(err, self);
                 });
             });
         });
@@ -66,7 +62,7 @@ function Collection(workSheet, creds) {
                 self.fields[cells[i].value] = 1;
             }
             //console.log(JSON.stringify(self.fields));
-            cb(self.fields);
+            cb(err, self.fields);
         });    
     }
     
