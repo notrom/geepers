@@ -1,3 +1,4 @@
+'use strict';
 
 var assert = require("assert");
 
@@ -36,7 +37,7 @@ describe('geepers', function() {
             if (collection) done();
         });
     });
-    describe.only('#Collection.filterQuery()', function () {
+    describe('#Collection.filterQuery()', function () {
         before(function (done) {
             this.timeout(30000);
             geepers.connect(geepersId, function (err, dbConn) {
@@ -61,16 +62,28 @@ describe('geepers', function() {
             var queryString = db.collection(mochaTestSheet).filterQuery({a:{$lt:1}});
             assert.equal(queryString, ' a < 1');
         });
-        it('not?');
-        it('<=?');
-        it('>=?');
-        it('Other filter types?');
+        it('not?');        
+        it('$gte', function() {
+            var queryString = db.collection(mochaTestSheet).filterQuery({a:{$gte:1}});
+            assert.equal(queryString, ' a >= 1');
+        });
+        it('$lte', function() {
+            var queryString = db.collection(mochaTestSheet).filterQuery({a:{$lte:1}});
+            assert.equal(queryString, ' a <= 1');
+        });
+        it('$ne');
+        it('$in');
+        it('$nin');
+        it('$not');
+        it('$exists');
+        it('Projections http://docs.mongodb.org/master/tutorial/project-fields-from-query-results/');
+        it('Modifiers http://docs.mongodb.org/manual/reference/operator/query-modifier/');
         it('composite query', function() {
             var queryString = db.collection(mochaTestSheet).filterQuery( {b:4, $or:[{a:{$gt:1}}, {a:3}]} );
             assert.equal(queryString, ' b = 4 and  (  a > 1 or a = 3 ) ');
         });
     });
-    describe('#Collection.find()', function () {
+    describe.only('#Collection.find()', function () {
         before(function (done) {
             this.timeout(30000);
             geepers.connect(geepersId, function (err, dbConn) {
@@ -85,52 +98,64 @@ describe('geepers', function() {
         });
         it('with empty filter, returns all records', function (done) {
             db.collection(mochaTestSheet).find({},{},function (err, result) {
-                assert.equal(testData.length, result.length);
+                assert.equal(result.length, testData.length);
                 done(err);
             });
         });
         it('equals 22 filter, returns only 1 record, with ', function (done) {
             db.collection(mochaTestSheet).find({i:22},{},function (err, result) {
-                assert.equal(1, result.length);
-                assert.equal(22, result[0].i);
+                assert.equal(result.length, 1);
+                assert.equal(result[0].i, 22);
                 done(err);
             });
         });
         it('Greater than 22 filter returns only those greater, 7 records', function (done) { 
             db.collection(mochaTestSheet).find({i:{$gt:22}},{},function (err, result) {
-                assert.equal(7, result.length);
+                assert.equal(result.length, 7);
                 done(err);
             });
         });
         it('Less than 22 filter returns only those less than, 2 records', function (done) { 
             db.collection(mochaTestSheet).find({i:{$lt:22}},{},function (err, result) {
-                assert.equal(2, result.length);
+                assert.equal(result.length, 2);
+                done(err);
+            });
+        });
+        it('Greater or equal than 22 filter returns only those greater or equal, 8 records', function (done) { 
+            db.collection(mochaTestSheet).find({i:{$gte:22}},{},function (err, result) {
+                assert.equal(result.length, 8);
+                done(err);
+            });
+        });
+        it('Less or equal than 22 filter returns only those less than, 3 records', function (done) { 
+            db.collection(mochaTestSheet).find({i:{$lte:22}},{},function (err, result) {
+                assert.equal(result.length, 3);
                 done(err);
             });
         });
         it('or filter 22 or 23 return only those 2 records', function (done) { 
             db.collection(mochaTestSheet).find({$or:[{i:22},{i:23}]},{},function (err, result) {
-                assert.equal(2, result.length);
-                assert.equal(true, (result[0].i == 22 || result[1].i == 22));
-                assert.equal(true, (result[0].i == 23 || result[1].i == 23));
+                assert.equal(result.length, 2);
+                assert.equal((result[0].i == 22 || result[1].i == 22), true);
+                assert.equal((result[0].i == 23 || result[1].i == 23), true);
                 done(err);
             });
         });
         it('equals filter "i = 28", returns 2 records, correct time values ', function (done) {
             db.collection(mochaTestSheet).find({i:28},{},function (err, result) {
-                assert.equal(2, result.length);
-                assert.equal(28, result[0].i);
-                assert.equal(282828, result[0].time);
-                assert.equal(28, result[1].i);
-                assert.equal(292929, result[1].time);
+                assert.equal(result.length, 2);
+                assert.equal(result[0].i, 28);
+                assert.equal(result[0].time, 282828);
+                assert.equal(result[1].i, 28);
+                assert.equal(result[1].time, 292929);
                 done(err);
             });
         });
         it('and filter "i == 28 and time == 282828" returns 1 records', function (done) {
             db.collection(mochaTestSheet).find({i:28,time:282828},{},function (err, result) {
-                assert.equal(1, result.length);
-                assert.equal(282828, result[0].time);
-                assert.equal(28, result[0].i);
+                assert.equal(result.length, 1);
+                assert.equal(result[0].time, 282828);
+                assert.equal(result[0].i, 28);
                 done(err);
             });
         });
@@ -138,9 +163,9 @@ describe('geepers', function() {
             db.collection(mochaTestSheet).find({word:'this is 20'},{},function (err, result) {
                 assert.equal(err, null);
                 assert.notEqual(result, null);
-                assert.equal(1, result.length);
-                assert.equal(202020, result[0].time);
-                assert.equal(20, result[0].i);
+                assert.equal(result.length, 1);
+                assert.equal(result[0].time, 202020);
+                assert.equal(result[0].i, 20);
                 done(err);
             });
         });
@@ -160,9 +185,9 @@ describe('geepers', function() {
         });
        it('partial object (missing properties) insert ok', function (done) {
            db.collection(mochaTestSheet).insertMany([{i:1}], {}, function (err, result) {
-               assert.equal(1, result.length);
-               assert.equal(1, result[0].i);
-               assert.equal(null, result[0].time);
+               assert.equal(result.length, 1);
+               assert.equal(result[0].i, 1);
+               assert.equal(result[0].time, null);
                done(err);
            });
         }); 

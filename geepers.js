@@ -4,6 +4,7 @@ var GoogleSpreadsheet = require("google-spreadsheet");
 var async = require("async");
 var uuid = require('node-uuid');
 var creds = require('./gsheetsauth.json');
+var semaphore = require('semaphore');
 
 var Geepers = function() {
     var self = this;
@@ -50,7 +51,7 @@ function Collection(workSheet, creds) {
     self.creds = creds;
     self.fields = {};
     self.semCap = 10;
-    self.sem = require('semaphore')(self.semCap);
+    self.sem = semaphore(self.semCap);
 
     this.getFields = function (cb) {
         self.fields = {};
@@ -256,8 +257,12 @@ function filterOptProcess(queryPart, filterObj, op, first) {
                 queryPart = filterOptProcess(queryPart + op + ele, filterObj[ele], op, false);
             } else if (ele === '$gt') {
                 queryPart += ' > ' + filterObj[ele];
+            } else if (ele === '$gte') {
+                queryPart += ' >= ' + filterObj[ele];
             } else if (ele === '$lt') {
                 queryPart += ' < ' + filterObj[ele];
+            } else if (ele === '$lte') {
+                queryPart += ' <= ' + filterObj[ele];
             } else {
                 if (typeof filterObj[ele] === 'string') {
                     filterObj[ele] = '"' + filterObj[ele] + '"';
