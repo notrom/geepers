@@ -209,6 +209,11 @@ function Collection(workSheet, creds) {
             });
         });
     };
+    
+    // Returns the query string generated for the provided filter object
+    this.filterQuery = function (filter) {
+        return filterToGsQuery(filter);
+    }
 }
 
 

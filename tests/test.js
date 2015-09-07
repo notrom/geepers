@@ -36,15 +36,39 @@ describe('geepers', function() {
             if (collection) done();
         });
     });
-    describe('#Collection.filter()', function () {
-        it('and');
-        it('$or');
-        it('$gt');
-        it('$lt');
+    describe.only('#Collection.filterQuery()', function () {
+        before(function (done) {
+            this.timeout(30000);
+            geepers.connect(geepersId, function (err, dbConn) {
+                if (err) throw err;
+                db = dbConn;
+                done();
+            });
+        });
+        it('and', function () {
+            var queryString = db.collection(mochaTestSheet).filterQuery({a:'b', c:'d'});
+            assert.equal(queryString, ' a = "b" and c = "d"');
+        });
+        it('$or', function () {
+            var queryString = db.collection(mochaTestSheet).filterQuery({$or:[{a:'b'},{a:'c'}]});
+            assert.equal(queryString, '  (  a = "b" or a = "c" ) ');
+        });
+        it('$gt', function() {
+            var queryString = db.collection(mochaTestSheet).filterQuery({a:{$gt:1}});
+            assert.equal(queryString, ' a > 1');
+        });
+        it('$lt', function() {
+            var queryString = db.collection(mochaTestSheet).filterQuery({a:{$lt:1}});
+            assert.equal(queryString, ' a < 1');
+        });
         it('not?');
         it('<=?');
         it('>=?');
         it('Other filter types?');
+        it('composite query', function() {
+            var queryString = db.collection(mochaTestSheet).filterQuery( {b:4, $or:[{a:{$gt:1}}, {a:3}]} );
+            assert.equal(queryString, ' b = 4 and  (  a > 1 or a = 3 ) ');
+        });
     });
     describe('#Collection.find()', function () {
         before(function (done) {
