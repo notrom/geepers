@@ -49,7 +49,7 @@ function Collection(workSheet, creds) {
     var self = this;
     self.workSheet = workSheet;
     self.creds = creds;
-    self.fields = {};
+    self.fields = {gid:1};
     self.semCap = 10;
     self.sem = semaphore(self.semCap);
 
@@ -189,7 +189,12 @@ function Collection(workSheet, creds) {
         });
     };
     
-    this.find = function (filter, opt, cb) {
+    this.find = function (filter, projection, cb) {
+        // if only 2 params, then 2 is cb, projection is empty (so all)
+        if (!cb && typeof projection === 'function') {
+            cb = projection;
+            projection = undefined;
+        } 
         var query = filterToGsQuery(filter);
         // use of sem to lock during some other ops
         self.sem.take(1, function () {
@@ -197,10 +202,12 @@ function Collection(workSheet, creds) {
                 self.sem.leave(1);
                 // based on what we know about the fields in this sheet
                 var data = [];
+                var obj = {};
+                var projectedFields = projectionIncludeFields(self.fields, projection);
                 for (var i = 0; !err && i < rowData.length; i++) {
-                    var obj = {};
-                    for (var prop in self.fields) {
-                        if (self.fields.hasOwnProperty(prop)) {
+                    obj = {};
+                    for (var prop in projectedFields) {
+                        if (projectedFields.hasOwnProperty(prop)) {
                             obj[prop] = rowData[i][prop];
                         }
                     }
@@ -214,6 +221,11 @@ function Collection(workSheet, creds) {
     // Returns the query string generated for the provided filter object
     this.filterQuery = function (filter) {
         return filterToGsQuery(filter);
+    }
+    
+    // Returns the fields returned when using a given projection
+    this.projectionFields = function (projection) {
+        return projectionIncludeFields(self.fields, projection);  
     }
 }
 
@@ -252,7 +264,7 @@ function filterOptProcess(queryPart, filterObj, op, first) {
                     queryPart = filterOptProcess(queryPart, filterObj['$or'][i], ' or ', orFirst);
                     orFirst = false;
                 }
-                queryPart += ' ) ';                
+                queryPart += ' ) ';
             } else if (typeof filterObj[ele] === 'object') {
                 queryPart = filterOptProcess(queryPart + op + ele, filterObj[ele], op, false);
             } else if (ele === '$gt') {
@@ -263,6 +275,8 @@ function filterOptProcess(queryPart, filterObj, op, first) {
                 queryPart += ' < ' + filterObj[ele];
             } else if (ele === '$lte') {
                 queryPart += ' <= ' + filterObj[ele];
+            } else if (ele === '$ne') {
+                queryPart += ' <> ' + filterObj[ele];
             } else {
                 if (typeof filterObj[ele] === 'string') {
                     filterObj[ele] = '"' + filterObj[ele] + '"';
@@ -272,6 +286,52 @@ function filterOptProcess(queryPart, filterObj, op, first) {
         }
     }
     return queryPart;
+}
+
+function projectionIncludeFields(fields, projection) {
+    var included = {};
+    var projInclusive = true;
+    // only process projections that are not null and have properties
+    if (projection && Object.keys(projection).length > 0) {
+        // Determie if this is an inclusive projection or exclusive
+        // based on the first element that's not the gid
+        if (Object.keys(projection).length === 1 && 
+            projection.hasOwnProperty('gid')) {
+            included = JSON.parse(JSON.stringify(fields));
+        } else {
+            for (var pEle in projection) {
+                if (projection.hasOwnProperty(pEle) && pEle !== 'gid') {
+                    projInclusive = projection[pEle];
+                    if (!projInclusive) {
+                        included = JSON.parse(JSON.stringify(fields));
+                    }
+                    break;
+                }
+            }
+        }
+        // for all projections properties that exist in fields
+        for (var fEle in fields) {
+            if (projection.hasOwnProperty(fEle) &&
+                fields.hasOwnProperty(fEle)) {
+                if (projInclusive) {
+                    included[fEle] = 1;
+                } else {
+                    delete included[fEle];
+                }
+            }
+        }
+        // gid is always returned unless explicitly excluded
+        if (projection.hasOwnProperty('gid')) {
+            if (!projection['gid']) {
+                delete included['gid'];
+            }
+        } else {
+            included['gid'] = 1;
+        }
+    } else {
+        included = JSON.parse(JSON.stringify(fields));
+    }
+    return included;
 }
 
 function deleteRow(row, cb) {
