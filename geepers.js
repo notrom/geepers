@@ -190,6 +190,7 @@ function Collection(workSheet, creds) {
     };
     
     this.find = function (filter, projection, cb) {
+        var resCursor;
         // if only 2 params, then 2 is cb, projection is empty (so all)
         if (!cb && typeof projection === 'function') {
             cb = projection;
@@ -213,7 +214,8 @@ function Collection(workSheet, creds) {
                     }
                     data.push(obj);
                 }
-                cb(err, data);
+                resCursor = new Cursor(data);
+                cb(err, resCursor);
             });
         });
     };
@@ -229,11 +231,35 @@ function Collection(workSheet, creds) {
     }
 }
 
-
+function Cursor (dataIn) {
+    var self = this;
+    self.dataArray = dataIn;
+    
+    this.toArray = function () {
+        return self.dataArray;       
+    }
+    
+    this.sort = function(sortSpec) {
+        self.dataArray = self.dataArray.sort(sort_by('i', true));
+        return self;
+    } 
+}
 
 module.exports = Geepers;
 
+// from http://stackoverflow.com/questions/979256/sorting-an-array-of-javascript-objects/979325#979325
+var sort_by = function(field, reverse, primer){
 
+   var key = primer ? 
+       function(x) {return primer(x[field])} : 
+       function(x) {return x[field]};
+
+   reverse = !reverse ? 1 : -1;
+
+   return function (a, b) {
+       return a = key(a), b = key(b), reverse * ((a > b) - (b > a));
+     } 
+}
 
 // UTILS
 function filterToGsQuery (filter) {

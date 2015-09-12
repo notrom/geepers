@@ -165,12 +165,14 @@ describe('geepers', function() {
         });
         it('with empty filter, returns all records', function (done) {
             db.collection(mochaTestSheet).find({},function (err, result) {
+                result = result.toArray();
                 assert.equal(result.length, testData.length);
                 done(err);
             });
         });
         it('equals 22 filter, returns only 1 record, with ', function (done) {
             db.collection(mochaTestSheet).find({i:22},function (err, result) {
+                result = result.toArray();
                 assert.equal(result.length, 1);
                 assert.equal(result[0].i, 22);
                 done(err);
@@ -178,30 +180,35 @@ describe('geepers', function() {
         });
         it('Greater than 22 filter returns only those greater, 7 records', function (done) { 
             db.collection(mochaTestSheet).find({i:{$gt:22}},{},function (err, result) {
+                result = result.toArray();
                 assert.equal(result.length, 7);
                 done(err);
             });
         });
         it('Less than 22 filter returns only those less than, 2 records', function (done) { 
             db.collection(mochaTestSheet).find({i:{$lt:22}},function (err, result) {
+                result = result.toArray();
                 assert.equal(result.length, 2);
                 done(err);
             });
         });
         it('Greater or equal than 22 filter returns only those greater or equal, 8 records', function (done) { 
             db.collection(mochaTestSheet).find({i:{$gte:22}},function (err, result) {
+                result = result.toArray();
                 assert.equal(result.length, 8);
                 done(err);
             });
         });
         it('Less or equal than 22 filter returns only those less than, 3 records', function (done) { 
             db.collection(mochaTestSheet).find({i:{$lte:22}},function (err, result) {
+                result = result.toArray();
                 assert.equal(result.length, 3);
                 done(err);
             });
         });
         it('or filter 22 or 23 return only those 2 records', function (done) { 
             db.collection(mochaTestSheet).find({$or:[{i:22},{i:23}]},function (err, result) {
+                result = result.toArray();
                 assert.equal(result.length, 2);
                 assert.equal((result[0].i == 22 || result[1].i == 22), true);
                 assert.equal((result[0].i == 23 || result[1].i == 23), true);
@@ -210,6 +217,7 @@ describe('geepers', function() {
         });
         it('equals filter "i = 28", returns 2 records, correct time values ', function (done) {
             db.collection(mochaTestSheet).find({i:28},function (err, result) {
+                result = result.toArray();
                 assert.equal(result.length, 2);
                 assert.equal(result[0].i, 28);
                 assert.equal(result[0].time, 282828);
@@ -220,6 +228,7 @@ describe('geepers', function() {
         });
         it('and filter "i == 28 and time == 282828" returns 1 records', function (done) {
             db.collection(mochaTestSheet).find({i:28,time:282828},function (err, result) {
+                result = result.toArray();
                 assert.equal(result.length, 1);
                 assert.equal(result[0].time, 282828);
                 assert.equal(result[0].i, 28);
@@ -228,6 +237,7 @@ describe('geepers', function() {
         });
         it('and filter on string property "word == "this is 20" returns 1 records', function (done) {
             db.collection(mochaTestSheet).find({word:'this is 20'},function (err, result) {
+                result = result.toArray();
                 assert.equal(err, null);
                 assert.notEqual(result, null);
                 assert.equal(result.length, 1);
@@ -238,6 +248,7 @@ describe('geepers', function() {
         });
         it('not equal 28 returns 8 records', function (done) {
             db.collection(mochaTestSheet).find({i:{$ne:28}},function (err, result) {
+                result = result.toArray();
                 assert.equal(err, null);
                 assert.notEqual(result, null);
                 assert.equal(result.length, 8);
@@ -246,6 +257,7 @@ describe('geepers', function() {
         });
         it('equal 22 returns 1 record, projection for time only plus gid, returns correct', function (done) {
             db.collection(mochaTestSheet).find({i:22},{time:1},function (err, result) {
+                result = result.toArray();
                 assert.equal(err, null);
                 assert.notEqual(result, null);
                 assert.equal(result.length, 1);
@@ -257,6 +269,7 @@ describe('geepers', function() {
         });
         it('equal 22 returns 1 record, projection to exclude time only, returns correct', function (done) {
             db.collection(mochaTestSheet).find({i:22},{time:0},function (err, result) {
+                result = result.toArray();
                 assert.equal(err, null);
                 assert.notEqual(result, null);
                 assert.equal(result.length, 1);
@@ -298,6 +311,7 @@ describe('geepers', function() {
                var foundI = result[0].i;
                var foundGid = result[0].gid;
                db.collection(mochaTestSheet).find({gid:foundGid}, {}, function (err, results) {
+                   result = result.toArray();
                    assert.equal(results.length, 1);
                    assert.equal(results[0].i, foundI);
                    done(err);
@@ -333,8 +347,10 @@ describe('geepers', function() {
         it('delete by filter with one match (i == 20) reduces count by 1, removes expected', function (done) {
             db.collection(mochaTestSheet).deleteMany({i:20},{},function (err, result) {
                 db.collection(mochaTestSheet).find({},{},function (err, results) {
+                    result = result.toArray();
                     assert.equal(testData.length - 1, results.length);
                     db.collection(mochaTestSheet).find({i:20},{},function (err, results) {
+                        result = result.toArray();
                         assert.equal(0, results.length);
                         done();
                     });
@@ -344,12 +360,36 @@ describe('geepers', function() {
         it('delete by filter > 26 reduces count by 3, and removes expected', function (done) {
             db.collection(mochaTestSheet).deleteMany({i: {$gt: 26}},{},function (err, result) {
                 db.collection(mochaTestSheet).find({},{},function (err, results) {
+                    result = result.toArray();
                     assert.equal(testData.length - 3, results.length);
                     db.collection(mochaTestSheet).find({i: {$gt: 26}},{},function (err, results) {
+                        result = result.toArray();
                         assert.equal(0, results.length);
                         done();
                     });
                 });
+            });
+        });
+    });
+    describe('#Cursor.sort()', function () {
+        beforeEach(function (done) {
+            this.timeout(30000);
+            geepers.connect(geepersId, function (err, dbConn) {
+                if (err) throw err;
+                db = dbConn;
+                db.collection(mochaTestSheet).deleteMany({}, {}, function (err, result) {
+                    db.collection(mochaTestSheet).insertMany(testData, {}, function (err, result) {
+                        done(err);
+                    });
+                });
+            });
+        });
+        it.only('finds all in reverse i order', function (done) { 
+            db.collection(mochaTestSheet).find({},function (err, result) {
+                result = result.sort({i:-1}).toArray();
+                console.log(result);
+                assert.equal(result.length, 10);
+                done(err);
             });
         });
     });
