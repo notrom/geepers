@@ -114,8 +114,6 @@ function Collection(workSheet, creds) {
                 var j = i;
                 objs[j].gid = uuid.v4();
                 var obj = objs[j];
-                //console.log(obj.gid);
-                //console.log(obj);
                 // check if the fields in obj exist in worksheet fields
                 var missing = fieldsNotInObj2(obj, self.fields);
 
@@ -165,7 +163,36 @@ function Collection(workSheet, creds) {
         }
     };
     
-    this.deleteMany = function (filter, opt, cb) {
+    this.update = function (filter, updates, cb) {
+        // find rows
+        var query = filterToGsQuery(filter);
+        // use of sem to lock during some other ops
+        self.sem.take(1, function () {
+            findRows(self.workSheet, query, function (err, rowData) {
+                self.sem.leave(1);
+                if (!err) {
+                    async.each(rowData, function(row, cb) {
+                        // update props
+                        for (var prop in updates) {
+                            if (updates.hasOwnProperty(prop)) {
+                                row[prop] = updates[prop];
+                            }
+                        }
+                        // save the row
+                        row.save(function (err) {
+                            cb(err);
+                        });
+                    }, function (err) {
+                        cb(err);
+                    });
+                } else {
+                    cb(err);
+                }
+            });
+        });
+    }
+    
+    this.deleteMany = function (filter, cb) {
         var query = filterToGsQuery(filter);
     
         // while deleting, block all others

@@ -77,8 +77,7 @@ describe('geepers', function() {
         it('$in');
         it('$nin');
         it('$exists');
-        it('Projections http://docs.mongodb.org/master/tutorial/project-fields-from-query-results/');
-        it('Modifiers http://docs.mongodb.org/manual/reference/operator/query-modifier/');
+        it('regex');
         it('composite query', function() {
             var queryString = db.collection(mochaTestSheet).filterQuery( {b:4, $or:[{a:{$gt:1}}, {a:3}]} );
             assert.equal(queryString, ' b = 4 and  (  a > 1 or a = 3 ) ');
@@ -150,13 +149,85 @@ describe('geepers', function() {
             assert.equal(fieldKeys.length, 2, 'Incorrect field count');
         });
     });
+    describe.only('#Collection.update()', function () {
+        beforeEach(function (done) {
+            this.timeout(30000);
+            geepers.connect(geepersId, function (err, dbConn) {
+                if (err) throw err;
+                db = dbConn;
+                db.collection(mochaTestSheet).deleteMany({}, function (err, result) {
+                    db.collection(mochaTestSheet).insertMany(testData, {}, function (err, result) {
+                        done(err);
+                    });
+                });
+            });
+        });
+        it('can update a single field in a single record', function (done) {
+            this.timeout(30000);
+            db.collection(mochaTestSheet).find({i:22},function (err, result) {
+                var updatedWord = 'this is an updated 22';
+                assert.equal(result.count(), 1, 'find returned incorrect number');
+                assert.equal(result.next().word, 'this is 22', '"word" field not as expected');
+                db.collection(mochaTestSheet).update({i:22}, {word:updatedWord}, function (err) {
+                    db.collection(mochaTestSheet).find({i:22},function (err, result) {
+                        var rec = result.next();
+                        assert.equal(rec.word, updatedWord, '"word" not updated as expected');
+                        assert.equal(result.count(), 1, 'inconsistent record count');
+                        done();
+                    });
+                });                
+            });
+        });
+        it('can update a two fields in a single record', function (done) {
+            this.timeout(30000);
+            db.collection(mochaTestSheet).find({i:22},function (err, result) {
+                var updatedWord = 'this is an updated 22';
+                var updatedTime = 300;
+                assert.equal(result.count(), 1, 'find returned incorrect number');
+                assert.equal(result.next().word, 'this is 22', '"word" field not as expected');
+                db.collection(mochaTestSheet).update({i:22}, {word:updatedWord, 
+                                                              time:updatedTime}, function (err) {
+                    db.collection(mochaTestSheet).find({i:22},function (err, result) {
+                        var rec = result.next();
+                        assert.equal(rec.word, updatedWord, '"word" not updated as expected');
+                        assert.equal(rec.time, updatedTime, '"time" not updated as expected');
+                        assert.equal(result.count(), 1, 'inconsistent record count');
+                        done();
+                    });
+                });                
+            });
+        });
+        it('can update a two fields in a two records', function (done) {
+            this.timeout(30000);
+            db.collection(mochaTestSheet).find({i:28},function (err, result) {
+                var updatedWord = 'this is an updated 28';
+                var updatedTime = 328;
+                assert.equal(result.count(), 2, 'find returned incorrect number');
+                assert.equal(result.next().word, 'this is 28', 'first "word" field not as expected');
+                assert.equal(result.next().word, 'this is 28', 'second "word" field not as expected');
+                db.collection(mochaTestSheet).update({i:28}, {word:updatedWord, 
+                                                              time:updatedTime}, function (err) {
+                    db.collection(mochaTestSheet).find({i:28},function (err, result) {
+                        assert.equal(result.count(), 2, 'find returned incorrect number');
+                        var first = result.next();
+                        var second = result.next();
+                        assert.equal(first.word, updatedWord, 'first "word" not updated as expected');
+                        assert.equal(second.word, updatedWord, 'second "word" not updated as expected');
+                        assert.equal(first.time, updatedTime, 'first "time" not updated as expected');
+                        assert.equal(second.time, updatedTime, 'second "time" not updated as expected');
+                        done();
+                    });
+                });                
+            });
+        });
+    });
     describe('#Collection.find()', function () {
         before(function (done) {
             this.timeout(30000);
             geepers.connect(geepersId, function (err, dbConn) {
                 if (err) throw err;
                 db = dbConn;
-                db.collection(mochaTestSheet).deleteMany({}, {}, function (err, result) {
+                db.collection(mochaTestSheet).deleteMany({}, function (err, result) {
                     db.collection(mochaTestSheet).insertMany(testData, {}, function (err, result) {
                         done(err);
                     });
@@ -280,7 +351,6 @@ describe('geepers', function() {
                 done(err);
             });
         });
-        it('sort order');
     });
     describe('#Collection.insertMany()', function () {
         beforeEach(function (done) {
@@ -288,7 +358,7 @@ describe('geepers', function() {
             geepers.connect(geepersId, function (err, dbConn) {
                 if (err) throw err;
                 db = dbConn;
-                db.collection(mochaTestSheet).deleteMany({}, {}, function (err, result) {
+                db.collection(mochaTestSheet).deleteMany({}, function (err, result) {
                     done(err);
                 });
             });
@@ -311,7 +381,7 @@ describe('geepers', function() {
                var foundI = result[0].i;
                var foundGid = result[0].gid;
                db.collection(mochaTestSheet).find({gid:foundGid}, {}, function (err, results) {
-                   result = result.toArray();
+                   results = results.toArray();
                    assert.equal(results.length, 1);
                    assert.equal(results[0].i, foundI);
                    done(err);
@@ -325,7 +395,7 @@ describe('geepers', function() {
             geepers.connect(geepersId, function (err, dbConn) {
                 if (err) throw err;
                 db = dbConn;
-                db.collection(mochaTestSheet).deleteMany({}, {}, function (err, result) {
+                db.collection(mochaTestSheet).deleteMany({}, function (err, result) {
                     db.collection(mochaTestSheet).insertMany(testData, {}, function (err, result) {
                         done(err);
                     });
@@ -335,22 +405,22 @@ describe('geepers', function() {
         // deletes are sloooowwww
         this.timeout(30000);
         it('No err', function (done) {
-            db.collection(mochaTestSheet).deleteMany({i:20},{},function (err, result) {
+            db.collection(mochaTestSheet).deleteMany({i:20},function (err, result) {
                 done(err);
             });
         });
         it('result is true', function (done) {
-            db.collection(mochaTestSheet).deleteMany({i:20},{},function (err, result) {
+            db.collection(mochaTestSheet).deleteMany({i:20},function (err, result) {
                 if (result) done(err);
             });
         });
         it('delete by filter with one match (i == 20) reduces count by 1, removes expected', function (done) {
-            db.collection(mochaTestSheet).deleteMany({i:20},{},function (err, result) {
+            db.collection(mochaTestSheet).deleteMany({i:20},function (err, result) {
                 db.collection(mochaTestSheet).find({},{},function (err, results) {
-                    result = result.toArray();
+                    results = results.toArray();
                     assert.equal(testData.length - 1, results.length);
                     db.collection(mochaTestSheet).find({i:20},{},function (err, results) {
-                        result = result.toArray();
+                        results = results.toArray();
                         assert.equal(0, results.length);
                         done();
                     });
@@ -358,12 +428,12 @@ describe('geepers', function() {
             });
         });
         it('delete by filter > 26 reduces count by 3, and removes expected', function (done) {
-            db.collection(mochaTestSheet).deleteMany({i: {$gt: 26}},{},function (err, result) {
+            db.collection(mochaTestSheet).deleteMany({i: {$gt: 26}},function (err, result) {
                 db.collection(mochaTestSheet).find({},{},function (err, results) {
-                    result = result.toArray();
+                    results = results.toArray();
                     assert.equal(testData.length - 3, results.length);
                     db.collection(mochaTestSheet).find({i: {$gt: 26}},{},function (err, results) {
-                        result = result.toArray();
+                        results = results.toArray();
                         assert.equal(0, results.length);
                         done();
                     });
@@ -371,7 +441,7 @@ describe('geepers', function() {
             });
         });
     });
-    describe.only('#Cursor()', function () {
+    describe('#Cursor()', function () {
         before(function (done) {
             this.timeout(30000);
             geepers.connect(geepersId, function (err, dbConn) {
@@ -491,7 +561,6 @@ describe('geepers', function() {
                 var resArray = result.map(function (x) {
                     return x.i * 10;
                 });
-                console.log(resArray);
                 assert.equal(resArray.length, 10, 'map created array incorrect size');
                 assert.equal(resArray[0], 200, 'map value incorrect');
                 done(err);
