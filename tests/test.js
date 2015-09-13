@@ -371,8 +371,8 @@ describe('geepers', function() {
             });
         });
     });
-    describe('#Cursor.sort()', function () {
-        beforeEach(function (done) {
+    describe.only('#Cursor()', function () {
+        before(function (done) {
             this.timeout(30000);
             geepers.connect(geepersId, function (err, dbConn) {
                 if (err) throw err;
@@ -384,11 +384,116 @@ describe('geepers', function() {
                 });
             });
         });
-        it.only('finds all in reverse i order', function (done) { 
+        it('sorts all in descending i order', function (done) { 
             db.collection(mochaTestSheet).find({},function (err, result) {
                 result = result.sort({i:-1}).toArray();
-                console.log(result);
                 assert.equal(result.length, 10);
+                assert.ok(result[0].i >= result[1].i && result[0].i >= result[9].i, "Sort order not descending");
+                done(err);
+            });
+        });
+        it('sorts all in ascending i order', function (done) { 
+            db.collection(mochaTestSheet).find({},function (err, result) {
+                result = result.sort({i:1}).toArray();
+                assert.equal(result.length, 10);
+                assert.ok(result[0].i <= result[1].i && result[0].i <= result[9].i, "Sort order not ascending");
+                done(err);
+            });
+        });
+        it('sorts all in ascending "time" order', function (done) { 
+            db.collection(mochaTestSheet).find({},function (err, result) {
+                result = result.sort({time:1}).toArray();
+                assert.equal(result.length, 10);
+                assert.ok(result[0].time <= result[1].time && result[0].time <= result[9].time, "Sort order not ascending");
+                done(err);
+            });
+        });
+        it('sorts all in ascending "word" order', function (done) { 
+            db.collection(mochaTestSheet).find({},function (err, result) {
+                result = result.sort({word:1}).toArray();
+                assert.equal(result.length, 10);
+                assert.ok(result[0].word <= result[1].word && result[0].word <= result[9].word, "Sort order not ascending");
+                done(err);
+            });
+        });
+        it('sorts all in descending "word" order', function (done) { 
+            db.collection(mochaTestSheet).find({},function (err, result) {
+                result = result.sort({word:-1}).toArray();
+                assert.equal(result.length, 10);
+                assert.ok(result[0].word >= result[1].word && result[0].word >= result[9].word, "Sort order not ascending");
+                done(err);
+            });
+        });
+        it('sorts i = 28 in descending "time" order', function (done) { 
+            db.collection(mochaTestSheet).find({i:28},function (err, result) {
+                result = result.sort({time:-1}).toArray();
+                assert.equal(result.length, 2);
+                assert.ok(result[0].time >= result[1].time, "Sort order not ascending");
+                done(err);
+            });
+        });
+        it('counts correct number of results found, find all i', function (done) { 
+            db.collection(mochaTestSheet).find({i:28},function (err, result) {
+                assert.equal(result.count(), 2, 'Count of result is not as expected');
+                done(err);
+            });
+        });
+        it('counts correct number of results found, find all', function (done) { 
+            db.collection(mochaTestSheet).find({},function (err, result) {
+                assert.equal(result.count(), 10, 'Count of result is not as expected');
+                done(err);
+            });
+        });
+        it('forEach iterates over all results, find all', function (done) { 
+            db.collection(mochaTestSheet).find({},function (err, result) {
+                var n = 0;
+                var sum_i = 0;
+                result.forEach(function (rec) {
+                    n++;
+                    sum_i += +rec.i;
+                });
+                assert.equal(n, 10, 'the number counted (n) is not correct');
+                assert.equal(sum_i, 244, 'the sum of "i" is not correct');
+                done(err);
+            });
+        });
+        it('hasNext correctly indicates there is remaining records', function (done) {
+            db.collection(mochaTestSheet).find({},function (err, result) {
+                assert.equal(result.toArray().length, 10, 'find has reported incorrectly');
+                assert.equal(result.hasNext(), true, 'hasNext has reported false incorrectly');
+                done(err);
+            });
+        });
+        it('hasNext correctly indicates no remaining records, find returns 0', function (done) {
+            db.collection(mochaTestSheet).find({i:1},function (err, result) {
+                assert.equal(result.toArray().length, 0, 'find has reported incorrectly');
+                assert.equal(result.hasNext(), false, 'hasNext has reported true incorrectly');
+                done(err);
+            });
+        });
+        it('next iterates records, hasNext as exptected', function (done) {
+            db.collection(mochaTestSheet).find({i:28},function (err, result) {
+                assert.equal(result.toArray().length, 2, 'find has reported incorrectly');
+                var first = result.next();
+                assert.equal(first.i, 28, 'first value is not as expected');
+                assert.equal(result.hasNext(), true, 'hasNext has reported false incorrectly');
+                var second = result.next();
+                assert.equal(second.i, 28, 'second value is not as expected');
+                assert.equal(result.hasNext(), false, 'hasNext has reported true incorrectly');
+                var third = result.next();
+                assert.equal(third, null, 'third value should be third');
+                done(err);
+            });
+        });
+        it('map returns the expected array of results', function(done) {
+            db.collection(mochaTestSheet).find({},function (err, result) {
+                result.sort({i:1});
+                var resArray = result.map(function (x) {
+                    return x.i * 10;
+                });
+                console.log(resArray);
+                assert.equal(resArray.length, 10, 'map created array incorrect size');
+                assert.equal(resArray[0], 200, 'map value incorrect');
                 done(err);
             });
         });

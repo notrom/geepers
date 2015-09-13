@@ -234,15 +234,63 @@ function Collection(workSheet, creds) {
 function Cursor (dataIn) {
     var self = this;
     self.dataArray = dataIn;
+    self.currentIndex = 0;
     
     this.toArray = function () {
         return self.dataArray;       
     }
     
+    // only handles a single sort spec.
     this.sort = function(sortSpec) {
-        self.dataArray = self.dataArray.sort(sort_by('i', true));
+        var desc = false;
+        for (var prop in sortSpec) {
+            if (sortSpec.hasOwnProperty(prop)) {
+                if (sortSpec[prop] === -1) desc = true;
+                self.dataArray = self.dataArray.sort(sort_by(prop, desc));
+                break;
+            }
+        }
         return self;
+    }
+    
+    this.count = function() {
+        return self.dataArray.length;
+    }
+    
+    this.forEach = function (fnc) {
+        async.each(self.dataArray, function (row, cb) {
+            fnc(row);
+        }, function (err) {
+            return;
+        });
     } 
+    
+    this.hasNext = function() {
+        if (self.currentIndex < self.dataArray.length) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
+    this.next = function() {
+        var result = {};
+        if (self.currentIndex < self.dataArray.length) {
+            result = self.dataArray[self.currentIndex];
+            self.currentIndex++;
+        } else {
+            result = null;
+        }
+        return result;
+    }
+    
+    this.map = function (fnc) {
+        var mapResults = [];
+        for (var i = 0; i < self.dataArray.length; i++) {
+            mapResults.push(fnc(self.dataArray[i]));
+        }
+        return mapResults;
+    }
 }
 
 module.exports = Geepers;
