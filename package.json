@@ -1,15 +1,20 @@
 {
-  "name": "GeePersHarness",
+  "name": "geepers",
   "version": "0.0.1",
-  "private": true,
+  "author": {
+    "name": "Tim Morton",
+    "email": "notrommit@gmail.com"
+  },
   "scripts": {
-    "start": "node app.js",
-    "test": "mocha tests"
+    "test": "node_modules/.bin/mocha tests/test.js"
   },
   "dependencies": {
     "google-spreadsheet": "1.0.1",
     "async": "1.4.2",
     "semaphore": "1.0.3",
     "node-uuid": "1.4.3"
+  },
+  "devDependencies": {
+    "mocha": "*"
   }
 }
