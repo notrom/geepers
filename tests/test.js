@@ -1,15 +1,13 @@
 'use strict';
 
 var assert = require("assert");
-
-// My modules
 var Geepers = require('../geepers.js');
-var geepersId = "1NDpeh2QcZiadjzhIqW9e33IsEpmiM7XMafB2LJueA5c";
+var geepersConfig = require('../gsheetsauth.json');
+
 var mochaTestSheet = 'functionTests';
-//geepers.connect(geepersId, tests);
 
 var geepers = new Geepers();
-
+console.log(process.argv[0]);
 describe('geepers', function() {
     var db = {};
     var testData = [{i:20, time:202020, word:'this is 20'},
@@ -26,7 +24,7 @@ describe('geepers', function() {
     describe('#collection()', function () {
         beforeEach(function (done) {
             this.timeout(30000);
-            geepers.connect(geepersId, function (err, dbConn) {
+            geepers.connect(geepersConfig, function (err, dbConn) {
                 db = dbConn;
                 done(err);
             });
@@ -40,7 +38,7 @@ describe('geepers', function() {
     describe('#Collection.filterQuery()', function () {
         before(function (done) {
             this.timeout(30000);
-            geepers.connect(geepersId, function (err, dbConn) {
+            geepers.connect(geepersConfig, function (err, dbConn) {
                 if (err) throw err;
                 db = dbConn;
                 done();
@@ -86,7 +84,7 @@ describe('geepers', function() {
     describe('#Collection.projectionFields()', function () {
         before(function (done) {
             this.timeout(30000);
-            geepers.connect(geepersId, function (err, dbConn) {
+            geepers.connect(geepersConfig, function (err, dbConn) {
                 if (err) throw err;
                 db = dbConn;
                 done();
@@ -149,10 +147,10 @@ describe('geepers', function() {
             assert.equal(fieldKeys.length, 2, 'Incorrect field count');
         });
     });
-    describe.only('#Collection.update()', function () {
+    describe('#Collection.update()', function () {
         beforeEach(function (done) {
             this.timeout(30000);
-            geepers.connect(geepersId, function (err, dbConn) {
+            geepers.connect(geepersConfig, function (err, dbConn) {
                 if (err) throw err;
                 db = dbConn;
                 db.collection(mochaTestSheet).deleteMany({}, function (err, result) {
@@ -224,7 +222,7 @@ describe('geepers', function() {
     describe('#Collection.find()', function () {
         before(function (done) {
             this.timeout(30000);
-            geepers.connect(geepersId, function (err, dbConn) {
+            geepers.connect(geepersConfig, function (err, dbConn) {
                 if (err) throw err;
                 db = dbConn;
                 db.collection(mochaTestSheet).deleteMany({}, function (err, result) {
@@ -355,7 +353,7 @@ describe('geepers', function() {
     describe('#Collection.insertMany()', function () {
         beforeEach(function (done) {
             this.timeout(30000);
-            geepers.connect(geepersId, function (err, dbConn) {
+            geepers.connect(geepersConfig, function (err, dbConn) {
                 if (err) throw err;
                 db = dbConn;
                 db.collection(mochaTestSheet).deleteMany({}, function (err, result) {
@@ -392,7 +390,7 @@ describe('geepers', function() {
     describe('#Collection.deleteMany()', function () {
         beforeEach(function (done) {
             this.timeout(30000);
-            geepers.connect(geepersId, function (err, dbConn) {
+            geepers.connect(geepersConfig, function (err, dbConn) {
                 if (err) throw err;
                 db = dbConn;
                 db.collection(mochaTestSheet).deleteMany({}, function (err, result) {
@@ -444,10 +442,10 @@ describe('geepers', function() {
     describe('#Cursor()', function () {
         before(function (done) {
             this.timeout(30000);
-            geepers.connect(geepersId, function (err, dbConn) {
+            geepers.connect(geepersConfig, function (err, dbConn) {
                 if (err) throw err;
                 db = dbConn;
-                db.collection(mochaTestSheet).deleteMany({}, {}, function (err, result) {
+                db.collection(mochaTestSheet).deleteMany({}, function (err, result) {
                     db.collection(mochaTestSheet).insertMany(testData, {}, function (err, result) {
                         done(err);
                     });

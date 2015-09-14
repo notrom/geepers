@@ -3,19 +3,19 @@
 var GoogleSpreadsheet = require("google-spreadsheet");
 var async = require("async");
 var uuid = require('node-uuid');
-var creds = require('./gsheetsauth.json');
 var semaphore = require('semaphore');
 
 var Geepers = function() {
     var self = this;
-    var spreadSheet = {};
-    var thisSpreadsheetInfo = {};
-    var workSheets = {};
+    self.spreadSheet = {};
+    self.thisSpreadsheetInfo = {};
+    self.workSheets = {};
+    self.geepersConfig = {};
     
     function setupWorkSheets(spreadsheetInfo, cb) {
         var sheetWorksheets = {};
         async.each(spreadsheetInfo.worksheets, function (sheet, callback) {
-            sheetWorksheets[sheet.title] = new Collection(sheet, creds);
+            sheetWorksheets[sheet.title] = new Collection(sheet, self.geepersConfig);
             sheetWorksheets[sheet.title].getFields(function(err, fields) {
                 callback(err);
             });
@@ -25,18 +25,17 @@ var Geepers = function() {
     }
     
     this.collection = function (collectionName) {
-        return workSheets[collectionName];
+        return self.workSheets[collectionName];
     };
     
-    this.connect = function (gsId, cb) {
-        spreadSheet = new GoogleSpreadsheet(gsId);
-        spreadSheet.useServiceAccountAuth(creds, function (err) {
-            spreadSheet.getInfo(function (err, spreadSheetInfo) {
-                thisSpreadsheetInfo = spreadSheetInfo;
-                //console.log( spreadSheetInfo.title + ' is loaded' );
+    this.connect = function (geepersConfig, cb) {
+        self.geepersConfig = geepersConfig;
+        self.spreadSheet = new GoogleSpreadsheet(geepersConfig.geepers_sheet_id);
+        self.spreadSheet.useServiceAccountAuth(geepersConfig, function (err) {
+            self.spreadSheet.getInfo(function (err, spreadSheetInfo) {
+                self.thisSpreadsheetInfo = spreadSheetInfo;
                 setupWorkSheets(spreadSheetInfo, function (err, workSheetsCol) {
-                    workSheets = workSheetsCol;
-                    // TODO: not sure if this is correct or ideal ...
+                    self.workSheets = workSheetsCol;
                     cb(err, self);
                 });
             });
@@ -62,19 +61,15 @@ function Collection(workSheet, creds) {
             for (i=0; i < cells.length; i++) {
                 self.fields[cells[i].value] = 1;
             }
-            //console.log(JSON.stringify(self.fields));
             cb(err, self.fields);
         });    
     }
     
     this.insertOne = function (obj, opt, cb) {
         obj.gid = uuid.v4();
-        //console.log(obj.gid);
         // check if the fields in obj exist in worksheet fields
         var missing = fieldsNotInObj2(obj, self.fields);
-
         if (missing.length !== 0) {
-            //console.log("Need to add new header columns for " + missing);
             // block all others while adding header cells
             self.sem.take(self.semCap, function () {
                 addHeaderCells(self.workSheet, missing, Object.keys(self.fields).length + 1,
@@ -116,9 +111,7 @@ function Collection(workSheet, creds) {
                 var obj = objs[j];
                 // check if the fields in obj exist in worksheet fields
                 var missing = fieldsNotInObj2(obj, self.fields);
-
                 if (missing.length !== 0) {
-                    //console.log("Need to add new header columns for " + missing);
                     // block all others while adding header cells
                     self.sem.take(self.semCap, function () {
                         addHeaderCells(self.workSheet, missing, Object.keys(self.fields).length + 1,
@@ -194,7 +187,6 @@ function Collection(workSheet, creds) {
     
     this.deleteMany = function (filter, cb) {
         var query = filterToGsQuery(filter);
-    
         // while deleting, block all others
         self.sem.take(self.semCap, function () {
             findRows(self.workSheet, query, function (err, rowData) {
@@ -216,6 +208,7 @@ function Collection(workSheet, creds) {
         });
     };
     
+    // find does not return the cursor directly, only in the cb parameter
     this.find = function (filter, projection, cb) {
         var resCursor;
         // if only 2 params, then 2 is cb, projection is empty (so all)
@@ -322,6 +315,8 @@ function Cursor (dataIn) {
 
 module.exports = Geepers;
 
+/////// UTILS /////// 
+
 // from http://stackoverflow.com/questions/979256/sorting-an-array-of-javascript-objects/979325#979325
 var sort_by = function(field, reverse, primer){
 
@@ -336,7 +331,6 @@ var sort_by = function(field, reverse, primer){
      } 
 }
 
-// UTILS
 function filterToGsQuery (filter) {
     return filterOptProcess("", filter, " and ", true);
 }
