@@ -7,7 +7,7 @@ var geepersConfig = require('../gsheetsauth.json');
 var mochaTestSheet = 'functionTests';
 
 var geepers = new Geepers();
-console.log(process.argv[0]);
+
 describe('geepers', function() {
     var db = {};
     var testData = [{i:20, time:202020, word:'this is 20'},
@@ -20,7 +20,7 @@ describe('geepers', function() {
                     {i:27, time:272727, word:'this is 27'},
                     {i:28, time:282828, word:'this is 28'},
                     {i:28, time:292929, word:'this is 28'}];
-    
+    this.timeout(30000);
     describe('#collection()', function () {
         beforeEach(function (done) {
             this.timeout(30000);
@@ -154,7 +154,7 @@ describe('geepers', function() {
                 if (err) throw err;
                 db = dbConn;
                 db.collection(mochaTestSheet).deleteMany({}, function (err, result) {
-                    db.collection(mochaTestSheet).insertMany(testData, {}, function (err, result) {
+                    db.collection(mochaTestSheet).insertMany(testData, function (err, result) {
                         done(err);
                     });
                 });
@@ -226,7 +226,7 @@ describe('geepers', function() {
                 if (err) throw err;
                 db = dbConn;
                 db.collection(mochaTestSheet).deleteMany({}, function (err, result) {
-                    db.collection(mochaTestSheet).insertMany(testData, {}, function (err, result) {
+                    db.collection(mochaTestSheet).insertMany(testData, function (err, result) {
                         done(err);
                     });
                 });
@@ -361,8 +361,9 @@ describe('geepers', function() {
                 });
             });
         });
-       it('partial object (missing properties) insert ok', function (done) {
-           db.collection(mochaTestSheet).insertMany([{i:1}], {}, function (err, result) {
+        this.timeout(30000);
+        it('partial object (missing properties) insert ok', function (done) {
+           db.collection(mochaTestSheet).insertMany([{i:1}], function (err, result) {
                assert.equal(result.length, 1);
                assert.equal(result[0].i, 1);
                assert.equal(result[0].time, null);
@@ -370,7 +371,7 @@ describe('geepers', function() {
            });
         }); 
         it('gid property created and applied, can be queried', function (done) {
-           db.collection(mochaTestSheet).insertMany([{i:1},{i:2}], {}, function (err, result) {
+           db.collection(mochaTestSheet).insertMany([{i:1},{i:2}], function (err, result) {
                assert.equal(result.length, 2);
                assert.equal((result[0].i == 1 || result[1].i == 1), true);
                assert.equal((result[0].i == 2 || result[1].i == 2), true);
@@ -394,7 +395,7 @@ describe('geepers', function() {
                 if (err) throw err;
                 db = dbConn;
                 db.collection(mochaTestSheet).deleteMany({}, function (err, result) {
-                    db.collection(mochaTestSheet).insertMany(testData, {}, function (err, result) {
+                    db.collection(mochaTestSheet).insertMany(testData, function (err, result) {
                         done(err);
                     });
                 });
@@ -446,7 +447,7 @@ describe('geepers', function() {
                 if (err) throw err;
                 db = dbConn;
                 db.collection(mochaTestSheet).deleteMany({}, function (err, result) {
-                    db.collection(mochaTestSheet).insertMany(testData, {}, function (err, result) {
+                    db.collection(mochaTestSheet).insertMany(testData, function (err, result) {
                         done(err);
                     });
                 });

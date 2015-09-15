@@ -102,58 +102,68 @@ function Collection(workSheet, creds) {
         }
     };
     
-    this.insertMany = function (objs, opt, cb) {
-        var overallErr = null;
-        for (var i = 0; i < objs.length; i++) {
-            (function () {
-                var j = i;
-                objs[j].gid = uuid.v4();
-                var obj = objs[j];
-                // check if the fields in obj exist in worksheet fields
-                var missing = fieldsNotInObj2(obj, self.fields);
+    this.insertMany = function (objs, cb) {
+        var missing = [];
+        // process all the objs and see if we need to add any header fields
+        async.series([
+            //find the missing fields
+            function (cb) {
+                async.each(objs, function (obj, cb) {
+                    obj.gid = 1;
+                    var objMissing = fieldsNotInObj2(obj, self.fields);
+                    console.log('objMissing === ', objMissing);
+                    for (var i = 0; i < objMissing.length; i++) {
+                        // if the missing array doesn't already have this key, add it
+                        if (missing.indexOf(objMissing[i]) === -1) {
+                            missing.push(objMissing[i]);
+                        }
+                    }
+                    cb();
+                }, function (err) {
+                    cb(err);
+                });
+            }, 
+            // insert the missing fileds
+            function (cb) {
+                console.log('missing === ', missing);
                 if (missing.length !== 0) {
                     // block all others while adding header cells
                     self.sem.take(self.semCap, function () {
                         addHeaderCells(self.workSheet, missing, Object.keys(self.fields).length + 1,
                             function (err) {
                                 if (err) {
-                                    self.getFields(function (err2) {
+                                    self.getFields(function (err) {
                                         self.sem.leave(self.semCap);
-                                        cb(err, null);
+                                        cb(err);
                                     });
                                 } else {
                                     // update the local fields
-                                    var k;
-                                    for (k = 0; k < missing.length; k++) {
+                                    for (var k = 0; k < missing.length; k++) {
                                         self.fields[missing[k]] = 1;
                                     }
                                     self.sem.leave(self.semCap);
-                                    // write the object
-                                    self.workSheet.addRow(obj, function (err) {
-                                        if (err) {
-                                            overallErr = err;
-                                        }
-                                        if (j >= objs.length - 1) {
-                                            cb(overallErr, objs);
-                                        }
-                                    });
+                                    cb(err);
                                 }
-                            }
-                            );
+                            });
                     });
                 } else {
-                    // write the object
-                    self.workSheet.addRow(obj, function (err) {
-                        if (err) {
-                            overallErr = err;
-                        }
-                        if (j >= objs.length - 1) {
-                            cb(overallErr, objs);
-                        }
-                    });
+                    cb();
                 }
-            })();
-        }
+            }, 
+            // insert all the data
+            function (cb) {
+                async.each(objs, function (obj, cb) {
+                    obj.gid = uuid.v4();
+                    self.workSheet.addRow(obj, function (err) {
+                        cb(err);
+                    });
+                }, function (err) {
+                    cb(err)
+                });
+            }],
+            function (err, results) {
+                cb(err, objs)
+            });
     };
     
     this.update = function (filter, updates, cb) {
@@ -476,11 +486,23 @@ function fieldsNotInObj2 (obj1, obj2) {
 }
 
 function addHeaderCells (workSheet, fields, startColumn, cb) {
+    var i = 0;
+    async.eachSeries(fields, function (field, cb) {
+        addHeaderCell(workSheet, field, startColumn + i,
+            function (err) {
+                cb(err);
+            });
+        i++;
+    }, 
+    function (err) {
+        cb(err);
+    });
     // insert the missing headers
-    var i;
-    for (i = 0; i < fields.length; i++) {
+    /*for (var i = 0; i < fields.length; i++) {
+        console.log('i === ', i, fields[i]);
         addHeaderCell(workSheet, fields[i], startColumn+i, 
             function (err) {
+                console.log('inside i === ', i, fields[i]);
                 if (err) {
                     cb(err);
                 } else {
@@ -490,7 +512,7 @@ function addHeaderCells (workSheet, fields, startColumn, cb) {
                 }
             }
         );
-    }
+    }*/
 }
 
 function addHeaderCell (workSheet, fieldName, columnNum, cb) {
