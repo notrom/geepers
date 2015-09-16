@@ -1,6 +1,6 @@
 {
   "name": "geepers",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "author": "Tim Morton <notrommit@gmail.com>",
   "scripts": {
     "test": "mocha tests/test.js"
