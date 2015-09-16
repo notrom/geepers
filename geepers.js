@@ -111,7 +111,6 @@ function Collection(workSheet, creds) {
                 async.each(objs, function (obj, cb) {
                     obj.gid = 1;
                     var objMissing = fieldsNotInObj2(obj, self.fields);
-                    console.log('objMissing === ', objMissing);
                     for (var i = 0; i < objMissing.length; i++) {
                         // if the missing array doesn't already have this key, add it
                         if (missing.indexOf(objMissing[i]) === -1) {
@@ -125,7 +124,6 @@ function Collection(workSheet, creds) {
             }, 
             // insert the missing fileds
             function (cb) {
-                console.log('missing === ', missing);
                 if (missing.length !== 0) {
                     // block all others while adding header cells
                     self.sem.take(self.semCap, function () {
