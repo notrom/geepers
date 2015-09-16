@@ -1,12 +1,9 @@
 {
   "name": "geepers",
   "version": "0.0.2",
-  "author": {
-    "name": "Tim Morton",
-    "email": "notrommit@gmail.com"
-  },
+  "author": "Tim Morton <notrommit@gmail.com>",
   "scripts": {
-    "test": "node_modules/.bin/mocha tests/test.js"
+    "test": "mocha tests/test.js"
   },
   "dependencies": {
     "google-spreadsheet": "1.0.1",
@@ -16,5 +13,19 @@
   },
   "devDependencies": {
     "mocha": "*"
-  }
+  },
+  "description": "A simple Node.js library for accessing Google Spreadsheets. It provides an API similar to that of MongoDB for CRUD operations making it familiar to many developers.",
+  "main": "geepers.js",
+  "directories": {
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/notrom/geepers.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/notrom/geepers/issues"
+  },
+  "homepage": "https://github.com/notrom/geepers"
 }

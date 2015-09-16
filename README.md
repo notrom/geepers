@@ -52,7 +52,7 @@ id of the spreadsheet you noted earlier. It should end up looking something like
 ## Example Usage
 
 ```javascript
-var Geepers = require('geepers.js');
+var Geepers = require('geepers');
 var geepersConfig = require('./gsheetsauth.json');
 
 var geepers = new Geepers();
