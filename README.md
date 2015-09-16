@@ -48,7 +48,6 @@ id of the spreadsheet you noted earlier. It should end up looking something like
   "type": "service_account"
 }
 ```
-
 ## Example Usage
 
 ```javascript
